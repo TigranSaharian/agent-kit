@@ -1,0 +1,50 @@
+#!/bin/sh
+# Pre-commit hook: keep the agent kit's generated skill mirrors and internal
+# references honest before they reach a commit.
+#
+# This hook is opt-in and versioned (it lives in .githooks/, not .git/hooks/,
+# so it doesn't install itself). Each contributor enables it once with:
+#
+#   git config core.hooksPath .githooks
+#
+# CI runs the same checks unconditionally in the "lint-agent-kit" job, so a
+# contributor who skips this step is still caught before merge — this hook
+# just gives faster local feedback.
+
+set -e
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+
+PWSH=""
+if command -v pwsh >/dev/null 2>&1; then
+    PWSH="pwsh"
+elif command -v powershell.exe >/dev/null 2>&1; then
+    PWSH="powershell.exe"
+fi
+
+if [ -z "$PWSH" ]; then
+    echo "pre-commit: no PowerShell (pwsh/powershell.exe) found on PATH; skipping agent-kit checks locally." >&2
+    echo "pre-commit: CI's lint-agent-kit job will still enforce them." >&2
+    exit 0
+fi
+
+echo "pre-commit: checking skill mirrors are in sync..."
+if ! "$PWSH" -NoProfile -File scripts/sync-skills.ps1 -CheckOnly; then
+    echo "pre-commit: skill mirrors are out of sync. Run 'scripts/sync-skills.ps1' and re-stage the generated files." >&2
+    exit 1
+fi
+
+echo "pre-commit: checking agent model pins match the model map..."
+if ! "$PWSH" -NoProfile -File scripts/sync-agent-models.ps1 -CheckOnly; then
+    echo "pre-commit: agent model pins are out of sync. Run 'scripts/sync-agent-models.ps1' and re-stage the profiles." >&2
+    exit 1
+fi
+
+echo "pre-commit: checking agent kit internal references..."
+if ! "$PWSH" -NoProfile -File scripts/check-agent-kit.ps1; then
+    echo "pre-commit: agent kit has broken internal references. See warnings above." >&2
+    exit 1
+fi
+
+exit 0

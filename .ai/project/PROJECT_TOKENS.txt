@@ -1,0 +1,14 @@
+# Tokens that identify this project and must never appear in the reusable
+# agent kit layer (AGENTS.md/CLAUDE.md, .ai/ outside .ai/project/,
+# .github/copilot-instructions.md, and .github/agents/*.agent.md).
+#
+# One token per line. Blank lines and lines starting with "#" are ignored.
+# scripts/check-agent-kit.ps1 fails if any of these appear in the generic
+# layer, so a project fact cannot silently drift out of the overlay.
+#
+# Keep this list to project/codename-level identifiers, not common words —
+# specific enough that a legitimate match always means project-specific
+# content leaked into generic guidance.
+
+DiPro
+Libra

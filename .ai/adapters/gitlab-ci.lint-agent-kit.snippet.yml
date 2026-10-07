@@ -1,0 +1,21 @@
+# Reference snippet for this repository's own .gitlab-ci.yml.
+#
+# The installer never edits your real .gitlab-ci.yml (it is a single shared
+# file with project-specific jobs); it only drops this snippet so you can
+# merge the job in by hand. Paste the job below into your pipeline, adjust
+# `stage`/`tags` to match your existing pipeline, and keep it updated the
+# same way as any other CI job.
+#
+# What it does: runs the kit's own consistency checks (generated skill
+# mirrors, agent model pins, internal references) so drift is caught in CI
+# as well as locally via the optional .githooks/pre-commit hook.
+
+lint-agent-kit:
+  stage: build
+  tags:
+    - docker
+  image: mcr.microsoft.com/powershell:7.5-ubuntu-22.04@sha256:45d59313a09af0748255ac47b71e411d6089b723b6fe99bc950286c03030a66a
+  script:
+    - pwsh -NoProfile -File scripts/sync-skills.ps1 -CheckOnly
+    - pwsh -NoProfile -File scripts/sync-agent-models.ps1 -CheckOnly
+    - pwsh -NoProfile -File scripts/check-agent-kit.ps1

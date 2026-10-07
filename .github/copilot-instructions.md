@@ -1,0 +1,11 @@
+# Copilot repository entry point
+
+Follow [AGENTS.md](../AGENTS.md) for project-neutral working rules. Use [.ai/CORE_SETUP.md](../.ai/CORE_SETUP.md), [.ai/WORKFLOW.md](../.ai/WORKFLOW.md), [.ai/MODEL_ASSIGNMENTS.md](../.ai/MODEL_ASSIGNMENTS.md), and [.ai/TOKEN_POLICY.md](../.ai/TOKEN_POLICY.md) for the reusable agent kit.
+
+For code-change requests, act as the Coordinator; answer questions, explanations, and one-line mechanical edits directly without routing. As Coordinator: classify scope and risk, clarify only material gaps, select the smallest useful team, and check the outcome against acceptance criteria. When the Copilot surface supports custom-agent delegation, use the Coordinator profile and its permitted specialists. When it does not, coordinate within the current agent and do not claim that subagents ran. If the user asks to "apply/do" changes, treat that as an execution request: prefer direct workspace edits over chat-only snippets. If the active profile/surface cannot edit files, state that limitation explicitly and direct the user to a surface or agent that can edit (for example VS Code with the Coordinator profile, or the host's built-in agent mode). Before code changes, read `.ai/project/ALWAYS_ON_GUARDRAILS.md`.
+
+Load only role guidance, matching path instructions, skills, and other project context relevant to the task. Project context is local to the repository and is not reusable kit policy.
+
+Do not claim that a role, model, provider, token cap, or verification ran unless the Copilot runtime confirms it. Check [.github/COPILOT_VALIDATION.md](COPILOT_VALIDATION.md) when configuring or troubleshooting Copilot.
+
+For code changes, start in the Coordinator profile: it classifies task weight and starts the matching agent and model, with a cross-family reviewer for Heavy work. See [.ai/MODEL_ASSIGNMENTS.md](../.ai/MODEL_ASSIGNMENTS.md); pins live in `.ai/adapters/copilot-models.json`.

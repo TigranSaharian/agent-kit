@@ -1,0 +1,19 @@
+# Protected paths: changes that need explicit, recorded approval.
+# Format:  glob => reason [=> regex matched against the changed diff lines]
+# Checked by scripts/check-protected-paths.ps1.
+#
+# Derived from "Authorization scope" in ALWAYS_ON_GUARDRAILS.md. Confirm and
+# extend this list. Triggers that are not tied to a path are NOT detected here
+# and rely on the guardrails and review: authentication/authorization behavior,
+# queue topology and retry/redelivery behavior, MediatR pipeline registration
+# or order, and public API contract changes inside otherwise unprotected files.
+
+**/Migrations/** => Persistence schema or migrations
+DiPro.Domain/** => Shared Libra framework (cross-module change)
+DiPro.Application/** => Shared Libra framework (cross-module change)
+DiPro.Result/** => Shared Libra framework (cross-module change)
+DiPro.Observability/** => Shared Libra framework (cross-module change)
+**/*IntegrationEvents/** => Published integration-event contract
+**/Directory.Packages.props => Dependencies (adding, removing, or upgrading a package)
+**/packages.lock.json => Dependencies (adding, removing, or upgrading a package)
+**/*.csproj => Dependencies (adding, removing, or upgrading a package) => ^[+-]\s*<(PackageReference|PackageVersion)\b

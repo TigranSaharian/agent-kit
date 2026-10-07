@@ -1,0 +1,46 @@
+{
+  "notes": [
+    "Copilot adapter: single source of truth for which model each agent profile in .github/agents/ is pinned to.",
+    "Edit this file, then run scripts/sync-agent-models.ps1 to rewrite the 'model:' line in each profile. Never hand-edit a 'model:' line.",
+    "Model names must match the Copilot model picker exactly, in the qualified form 'Model Name (copilot)'.",
+    "For Heavy changes, use the reviewer profile from the model family opposite the implementer: Reviewer-GPT after Claude-family edits and Reviewer-Claude after GPT-family edits.",
+    "A tier lists models in priority order; keep fallbacks inside the same family so cross-family review is preserved.",
+    "Only GPT and Claude families are used in this Copilot mapping. No Strong tier exists yet; Strong tasks use the best available models. Add family-specific Strong tiers when larger models become available.",
+    "Re-verify against the model picker when models or account access change, or after staleAfterDays."
+  ],
+  "adapter": "GitHub Copilot custom agents (.github/agents/*.agent.md)",
+  "verifiedOn": "2026-10-01",
+  "staleAfterDays": 90,
+  "source": "VS Code Copilot Chat model picker, as listed by the repository owner on verifiedOn",
+  "retiredFamilies": [
+    "gemini"
+  ],
+  "tiers": {
+    "gpt-light": [
+      "GPT-5.6 Luna (copilot)"
+    ],
+    "gpt-standard": [
+      "GPT-5.6 Terra (copilot)",
+      "GPT-5.3-Codex (copilot)"
+    ],
+    "claude-light": [
+      "Claude Haiku 4.5 (copilot)"
+    ],
+    "claude-standard": [
+      "Claude Sonnet 5.5 (copilot)",
+      "Claude Sonnet 5 (copilot)"
+    ]
+  },
+  "profiles": {
+    "Coordinator": "gpt-standard",
+    "PO-BM": "claude-standard",
+    "Architect": "claude-standard",
+    "Implementer-Light": "claude-light",
+    "Implementer-Claude": "claude-standard",
+    "Implementer-GPT": "gpt-standard",
+    "Reviewer-Claude": "claude-standard",
+    "Reviewer-GPT": "gpt-standard",
+    "Verifier": "gpt-light",
+    "Utility": "gpt-light"
+  }
+}

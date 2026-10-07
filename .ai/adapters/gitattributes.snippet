@@ -1,0 +1,18 @@
+# Reference snippet for this repository's own .gitattributes.
+#
+# The installer never edits your real .gitattributes; merge these lines in by
+# hand. They keep kit files on LF line endings so git hooks, PowerShell
+# scripts, and YAML front matter behave the same on every OS. After merging,
+# run `git add --renormalize .` once to convert files already committed with
+# CRLF, and review the resulting diff before committing it.
+
+.githooks/*                       text eol=lf
+scripts/*.ps1                     text eol=lf
+AGENTS.md                         text eol=lf
+CLAUDE.md                         text eol=lf
+.ai/**                            text eol=lf
+.github/agents/*.agent.md         text eol=lf
+.github/instructions/*.md         text eol=lf
+.github/copilot-instructions.md   text eol=lf
+.claude/**                        text eol=lf
+.agents/**                        text eol=lf

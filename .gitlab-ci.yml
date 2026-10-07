@@ -1,0 +1,156 @@
+variables:
+  GIT_DEPTH: "0"
+  IMAGE_TAG: "$CI_COMMIT_SHORT_SHA"
+
+stages:
+  - build
+  - deploy
+  - test
+
+workflow:
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "development"'
+    - if: '$CI_COMMIT_BRANCH =~ /^release\/release-.+$/'
+    - if: '$CI_COMMIT_BRANCH == "devops"'
+
+default:
+  tags:
+    - snapp-runner
+  before_script:
+    - set -euo pipefail
+
+semgrep-sast:
+  stage: build
+  tags:
+    - docker
+
+include:
+- template: Security/SAST.gitlab-ci.yml
+- local: DiPro.Integrations/.gitlab-ci.yml
+  rules:
+    - changes:
+        paths:
+          - DiPro.Integrations/**/*
+          - DiPro.EkengClient/**/*
+          - DiPro.Result/**/*
+          - DiPro.Integrations.Client/**/*
+        compare_to: refs/heads/development
+
+lint-agent-kit:
+  stage: build
+  tags:
+    - docker
+  image: mcr.microsoft.com/powershell:7.5-ubuntu-22.04@sha256:45d59313a09af0748255ac47b71e411d6089b723b6fe99bc950286c03030a66a
+  script:
+    - pwsh -NoProfile -File scripts/sync-skills.ps1 -CheckOnly
+    - pwsh -NoProfile -File scripts/sync-agent-models.ps1 -CheckOnly
+    - pwsh -NoProfile -File scripts/check-agent-kit.ps1
+
+protected-paths-audit:
+  stage: build
+  tags:
+    - docker
+  image: mcr.microsoft.com/powershell:7.5-ubuntu-22.04@sha256:45d59313a09af0748255ac47b71e411d6089b723b6fe99bc950286c03030a66a
+  # Blocking post-merge audit for protected changes. The workflow below only
+  # starts branch pipelines, so this cannot enforce approval before merge.
+  # Configure CODEOWNERS or required merge-request approvals for that gate;
+  # do not add merge_request_event here until every build/deploy job has safe
+  # merge-request rules.
+  before_script:
+    - set -euo pipefail
+    - command -v git >/dev/null 2>&1 || (apt-get update -qq && apt-get install -y -qq git)
+    - git config --global --add safe.directory "$CI_PROJECT_DIR"
+  script:
+    - pwsh -NoProfile -File scripts/check-protected-paths.ps1
+
+build-backend:
+  stage: build
+  before_script:
+  - echo "$CI_JOB_TOKEN" | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin 
+  script:
+  - docker build --push -t $CI_REGISTRY_IMAGE:$IMAGE_TAG -t $CI_REGISTRY_IMAGE:latest .
+
+.deploy_template:
+  stage: deploy
+  needs: [build-backend]
+  variables:
+    KUSTOMIZATION_PATH: "apps/$CI_PROJECT_NAME/overlays/${ENV}/kustomization.yaml"
+  script:
+    - git config user.email "${GIT_USER_EMAIL}"
+    - git config user.name "${GIT_USER_NAME}"
+
+    # Authenticate using the project access token stored in CI/CD variables
+    - git clone "${GITOPS_REPO}" gitops
+    - cd gitops
+
+    - 'sed -i "s/newTag:.*/newTag: $CI_COMMIT_SHORT_SHA/" "${KUSTOMIZATION_PATH}"'
+
+    - git add "${KUSTOMIZATION_PATH}"
+    - git diff --staged --quiet && echo "No changes to commit" || git commit -m "Update image tag from CI"
+    - git push
+
+# ---- Dev & Test ----
+deploy_dev_or_test:
+  extends: .deploy_template
+  variables:
+    GITOPS_REPO: "https://oauth2:${DIGITAI_GITOPS_ACCESS_TOKEN}@git.snapp.int/infra/digitai/gitops.git"
+    GIT_USER_EMAIL: "project_24_bot_3f58b4d35e067ba78e3871b540c17e44@noreply.git.snapp.int"
+    GIT_USER_NAME: "project_24_bot_3f58b4d35e067ba78e3871b540c17e44"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "development"'
+      variables:
+        ENV: dev
+    - if: '$CI_COMMIT_BRANCH =~ /^release\/release-.+$/'
+      variables:
+        ENV: test
+
+# ---- Stage ----
+deploy_stage:
+  extends: .deploy_template
+  variables:
+    GITOPS_REPO: "https://oauth2:${SNAPP_GITOPS_ACCESS_TOKEN}@git.snapp.int/infra/snapp/gitops.git"
+    GIT_USER_EMAIL: "project_24_bot_986b0778beb6851436505ad0ee15fc75@noreply.git.snapp.int"
+    GIT_USER_NAME: "project_24_bot_986b0778beb6851436505ad0ee15fc75"
+    ENV: "stage"
+  rules:
+    - if: '$CI_COMMIT_BRANCH =~ /^release\/release-.+$/'
+      when: manual
+
+.qa_template:
+  stage: test
+  trigger:
+    project: qa/testing
+    branch: main
+    strategy: depend
+  variables:
+    SOURCE_PROJECT: "$CI_PROJECT_PATH"
+    SOURCE_PIPELINE_ID: "$CI_PIPELINE_ID"
+    SOURCE_COMMIT_SHA: "$CI_COMMIT_SHA"
+    SOURCE_COMMIT_SHORT_SHA: "$CI_COMMIT_SHORT_SHA"
+    SOURCE_COMMIT_REF: "$CI_COMMIT_REF_NAME"
+    SOURCE_JOB_URL: "$CI_JOB_URL"
+    SOURCE_ENVIRONMENT_URL: "$CI_ENVIRONMENT_URL"
+    ENV_NAME: "$ENV"
+    BASE_URL: "https://$ENV-backend.snapp.am"
+    AUTH_BASE_URL: "https://$ENV-backend.snapp.am"
+
+qa_dev_or_test:
+  extends: .qa_template
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "development"'
+      variables:
+        ENV: dev
+    - if: '$CI_COMMIT_BRANCH =~ /^release\/release-.+$/'
+      variables:
+        ENV: test
+  needs: 
+  - deploy_dev_or_test
+
+qa_stage:
+  extends: .qa_template
+  rules:
+    - if: '$CI_COMMIT_BRANCH =~ /^release\/release-.+$/'
+      variables:
+        ENV: stage
+  needs: 
+  - deploy_stage
