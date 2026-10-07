@@ -25,7 +25,7 @@ So: capture the baseline for the suite you are touching **before** editing, comp
 
 ## Completion: tests must be run
 
-A test task is not done until a Verifier has run the new tests and they pass: follow `.ai/WORKFLOW.md`, "Test completion gate". Implementers cannot run commands, so the Coordinator sequences the Verifier. Project commands: the new class alone with `dotnet test <project>.csproj --filter FullyQualifiedName~<ClassName>`; then the requested or project-level suite, compared with the baseline above.
+A test task is not done until the verification actor defined in `.ai/WORKFLOW.md`, "Test completion gate", has run the new tests and they pass. In separated-role adapters, implementers cannot run commands and the Coordinator sequences the Verifier; in a single-agent host, a terminal-capable current agent may perform verification after editing. Project commands: the new class alone with `dotnet test <project>.csproj --filter FullyQualifiedName~<ClassName>`; then the requested or project-level suite, compared with the baseline above.
 
 ## Running
 `dotnet test <project>.csproj --no-build` after building. Report the exact command and the pass/fail counts you actually saw.

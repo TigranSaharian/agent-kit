@@ -211,5 +211,5 @@ if ($approvalSource) {
 }
 
 Write-Warning "$($hits.Count) protected file(s) changed with no recorded approval."
-Write-Error "Record approval with the '$ApprovalLabel' merge request label or a '$ApprovalTrailer: <who / why>' commit trailer, or revert the protected changes."
+Write-Error "Record approval with the '$ApprovalLabel' merge request label or a '${ApprovalTrailer}: <who / why>' commit trailer, or revert the protected changes."
 exit 1

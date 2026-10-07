@@ -58,7 +58,7 @@ Platform and shared: `DiPro.Host` (composition root and the cross-module `Aggreg
 
 External integration clients: `ArmSoftLocalClient`, `ArmSoftPartnerClient` (core banking), `EkengClient` (Armenian state registry), `OzForensics` (biometric liveness), `IPayClient`, `EpgClient`, `PelekaClient`, `FcmClient`, `EmailClient`, `MailGunClient`, `Integrations` / `Integrations.Client`.
 
-`DiPro.sln` contains 104 projects.
+`DiPro.sln` contains 104 solution entries: 87 C# projects and 17 solution folders.
 
 ## Conventions that agents get wrong
 
@@ -78,7 +78,7 @@ External integration clients: `ArmSoftLocalClient`, `ArmSoftPartnerClient` (core
 
 **Messaging is outbox-backed.** `ApplicationDbContext.OnModelCreating` calls `AddTransactionalOutboxEntities()`. Module registration calls `AddEntityFrameworkOutbox<ApplicationDbContext>` with `UseBusOutbox()`, so publishes commit with the database transaction. The inbox gives duplicate detection over a 24-hour window — consumers are protected against redelivery of the same `MessageId`, but **not** against a semantically duplicate event with a new id. Consumers derive their definition from a module-local `BaseIntegrationEventConsumerDefinition<T>`, which applies retry intervals, delayed redelivery, and `UseEntityFrameworkOutbox`. Consumers are `internal sealed`, inject `ISender`, and delegate immediately to a command.
 
-**Consumer registration is explicit.** Unlike validators and entity configurations, consumers are *not* discovered by assembly scan. Each module hand-lists `AddConsumer<TConsumer, TDefinition>()` pairs in `Extensions/MessagingRegistrationExtensions.AddModuleConsumers()`. A consumer missing from that list compiles fine and silently never runs. Eight modules have this file: Accounts, Customers, FileStore, Identity, InternalStaff, Notifications, Transactions, Wallet.
+**Consumer registration is explicit.** Unlike validators and entity configurations, consumers are *not* discovered by assembly scan. Each module hand-lists `AddConsumer<TConsumer, TDefinition>()` pairs in `Extensions/MessagingRegistrationExtensions.AddModuleConsumers()`. A consumer missing from that list compiles fine and silently never runs. Nine modules have this file: Accounts, Customers, FileStore, Identity, InternalStaff, Kernel, Notifications, Transactions, Wallet.
 
 **EF tooling is a pinned local tool.** `dotnet-ef` 9.0.6 is declared in `DiPro.Host/.config/dotnet-tools.json`. Run `dotnet tool restore` and invoke it from `DiPro.Host` so the manifest resolves; a global `dotnet ef` may differ. The tool is 9.x while projects target `net8.0`.
 
@@ -114,7 +114,7 @@ Consequences for any agent doing verification work:
 
 Note: the test project folder `DiPro.Customer.Tests` (singular) holds `DiPro.Customers.Tests.csproj` (plural). `DiPro.ProviderServices.Tests/` is a stale directory containing only `bin`/`obj`; there is no such project in the solution.
 
-Only 5 of 104 projects have tests, and the CI pipeline (`.gitlab-ci.yml`) runs **no `dotnet test` step at all** — it builds a Docker image, bumps an image tag in a GitOps repo, and triggers an external QA project. `semgrep-sast` does run on every pipeline. Nothing automatically verifies .NET correctness, so your own verification is the only gate.
+Only 5 of 87 C# projects have tests, and the CI pipeline (`.gitlab-ci.yml`) runs **no `dotnet test` step at all** — it builds a Docker image, bumps an image tag in a GitOps repo, and triggers an external QA project. `semgrep-sast` does run on every pipeline. Nothing automatically verifies .NET correctness, so your own verification is the only gate.
 
 ## Where to put things
 

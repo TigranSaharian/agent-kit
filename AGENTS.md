@@ -2,7 +2,7 @@
 
 Use this file as the reusable, project-neutral baseline for coding agents.
 
-_Last structural review of this kit (roles, workflow, agent profiles, cross-references): 2026-10-01. This tracks the kit's own maintenance, not any project's facts — see `.ai/project/VERIFIED.md` for the project overlay's fact freshness. Update this date when the kit's structure changes materially (new role, new routing rule, renamed file) and after running `scripts/check-agent-kit.ps1` clean._
+_Last structural review of this kit (roles, workflow, agent profiles, cross-references): 2026-10-07. This tracks the kit's own maintenance, not any project's facts — see `.ai/project/VERIFIED.md` for the project overlay's fact freshness. Update this date when the kit's structure changes materially (new role, new routing rule, renamed file) and after running `scripts/check-agent-kit.ps1` clean._
 
 ## Start here
 

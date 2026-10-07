@@ -12,7 +12,7 @@
     entry point) to catch a dangling reference before an agent trips over it
     mid-task.
 
-    Eleven checks:
+    Twelve checks:
     1. Markdown links ("[text](path)") inside .ai/, .github/, and the root
        entry-point files must resolve to an existing file (relative to the
        linking file's own directory). External (http/https/mailto) links
@@ -50,6 +50,8 @@
        cost cannot creep up unnoticed.
    11. Every scripts/*.ps1 named in .gitlab-ci.yml, the CI snippet, or the
        git hook must exist.
+   12. Every scripts/*.ps1 file must parse as valid PowerShell, so a syntax
+       error cannot silently disable an enforcement check.
 
 .PARAMETER Quiet
     Suppress the per-check "OK" lines; still prints warnings/errors.
@@ -424,6 +426,27 @@ if (-not $Quiet) {
     Write-Host "Checked $scriptRefChecked script reference(s) in CI and hook files."
 }
 
+# --- Check 12: PowerShell scripts parse cleanly ----------------------------
+$scriptParseChecked = 0
+$scriptsRoot = Join-Path $repoRoot 'scripts'
+if (Test-Path $scriptsRoot -PathType Container) {
+    foreach ($scriptFile in Get-ChildItem -Path $scriptsRoot -Filter '*.ps1' -File) {
+        $scriptParseChecked++
+        $tokens = $null
+        $parseErrors = $null
+        [void][System.Management.Automation.Language.Parser]::ParseFile(
+            $scriptFile.FullName,
+            [ref]$tokens,
+            [ref]$parseErrors)
+        foreach ($parseError in @($parseErrors)) {
+            $problems += "PowerShell syntax error in scripts/$($scriptFile.Name):$($parseError.Extent.StartLineNumber): $($parseError.Message)"
+        }
+    }
+}
+if (-not $Quiet) {
+    Write-Host "Parsed $scriptParseChecked PowerShell script(s) for syntax errors."
+}
+
 # --- Report ---------------------------------------------------------------
 if ($problems.Count -gt 0) {
     foreach ($p in $problems) {
@@ -433,5 +456,5 @@ if ($problems.Count -gt 0) {
     exit 1
 }
 
-Write-Host 'Agent kit self-check passed: all links, role references, applyTo globs, genericity, subagent references, retired-family, section-reference, CI image, tool-boundary, size-budget, and script-reference checks are clean.'
+Write-Host 'Agent kit self-check passed: all links, role references, applyTo globs, genericity, subagent references, retired-family, section-reference, CI image, tool-boundary, size-budget, script-reference, and PowerShell-syntax checks are clean.'
 exit 0

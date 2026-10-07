@@ -6,5 +6,5 @@
 - Proportionate verification is run, or the reason it could not be run is reported.
 - The final report lists changed areas, exact checks/results, assumptions, and remaining risks.
 - No secrets or sensitive data are included.
-- Any added or changed test was run by the Verifier after the final edit and passed (`.ai/WORKFLOW.md`, "Test completion gate"); otherwise the task is reported as pending verification.
+- Any added or changed test was run after the final edit by the verification actor defined in `.ai/WORKFLOW.md`, "Test completion gate", and passed; otherwise the task is reported as pending verification.
 - Heavy changes received an independent review (preferably from a different model family than the author), or the limitation is reported.

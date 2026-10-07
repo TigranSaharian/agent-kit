@@ -11,6 +11,10 @@ This file is the **single dated fact** for how fresh the DiPro-specific overlay 
 | SDK | 10.0.401 |
 | Stale past | 2026-10-29 (30 days later), or sooner if the solution, tests, or CI change materially |
 
+## Targeted fact refresh
+
+On 2026-10-07, a repository audit confirmed 104 solution entries in `DiPro.sln` (87 C# projects and 17 solution folders) and nine modules with `MessagingRegistrationExtensions.cs`, including Kernel. This targeted check did not re-run the full build/test baseline and therefore does not advance the `Last verified` date.
+
 ## Recorded test baseline (single source of truth)
 
 All other files link here instead of repeating these numbers. Red on a clean checkout; capture a fresh baseline for the suite you touch before editing.

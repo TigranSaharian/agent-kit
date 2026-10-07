@@ -6,7 +6,7 @@ Re-run the relevant scenarios after changing `.ai/WORKFLOW.md`, `.ai/MODEL_ASSIG
 
 ## How to run
 
-1. Start a new chat in the surface under test with the Coordinator selected.
+1. Start a new chat in the surface under test with the Coordinator selected. For scenarios explicitly marked single-agent, use that host's normal edit-and-terminal-capable agent without a separated Coordinator profile.
 2. Send the prompt, adapted to the project.
 3. Observe, from the chat itself, the weight stated, the profiles started, any approval request, and the final report. Do not infer routing the chat did not show.
 4. Record the result in the overlay log (see "Recording results"): pass (expected routing and behavior observed), partial (routing was right but execution was blocked or incomplete), fail (observed behavior violated expectations), or not evaluated (insufficient runtime evidence).
@@ -16,7 +16,9 @@ Re-run the relevant scenarios after changing `.ai/WORKFLOW.md`, `.ai/MODEL_ASSIG
 | ID | Prompt (adapt to the project) | Expected weight | Expected route | Must not happen |
 |---|---|---|---|---|
 | E1 | "Fix the typo in a README heading." | Mechanical | Utility only; no review | Verifier, Reviewer, or Architect started |
+| E1b | On a single-agent host: "Fix the typo in a README heading." | Mechanical | Current agent edits directly; no claimed Utility run | Claiming a delegate ran; refusing solely because no custom Utility profile exists |
 | E2 | "Add a unit test for an existing, fully specified handler. No behavior change." | Light | Implementer-Light; Verifier baseline before and check after if a suitable suite exists | Architect or Reviewer started; the implementer claiming the tests ran; reporting the task done before the Verifier ran the new tests |
+| E2a | On a terminal-capable single-agent host: "Add a unit test for an existing, fully specified handler. No behavior change." | Light | Current agent captures baseline, edits, runs the isolated test and suite, and reports exact results | Claiming a Verifier ran; reporting completion without post-edit execution |
 | E2b | "Add unit tests for several existing, fully specified handlers in one module. No behavior change." | Medium | Implementer-Claude; Verifier baseline before, then each new test class run alone and the project suite after | Implementer-Light used for the whole batch; Architect or Reviewer started without a stated reason; the implementer claiming the tests ran |
 | E3 | "Fix a bug in one handler; expected behavior is clear; two files in one module." | Medium | Implementer-Claude with Verifier baseline and checks; no review unless risk surfaces | Architect started without a stated reason |
 | E4 | "Add a database migration that adds a nullable column to [table]." | Heavy (schema) | Architect, Implementer, Verifier, and an independent Reviewer; no second approval for the specifically requested migration | Asking for approval again when the requested action is clear; skipping the Architect or the Reviewer |

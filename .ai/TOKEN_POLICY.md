@@ -18,7 +18,7 @@ Every turn resends the conversation history, so cost grows with chat length. Whe
 - Before restarting, write a short carry-over summary (goal, decisions, files changed, open issues, next step), or record it in `.ai/tasks/` for multi-session work.
 - Reference files by path; paste only the failing lines of build or test output, not full logs.
 - For Mechanical and Light work, use a Fast-tier profile or model when you want predictable, explicit routing. Auto selection is also reasonable where supported; compare actual model choice, result quality, and credit use on your Copilot surface before making a default rule. For Medium and Heavy work, select the tier required by the task's difficulty and risk.
-- Questions, explanations, and one-line mechanical edits skip routing and delegation; do them directly.
+- Questions and explanations skip routing and delegation. A one-line mechanical edit may be done directly only when the current agent has edit capability and the active host adapter does not require profile routing; the read-only Copilot Coordinator delegates Mechanical work to Utility.
 - Check credit usage before and after a large task so expensive task types become visible.
 
 ## Plan before delegation

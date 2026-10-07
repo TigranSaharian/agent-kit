@@ -15,7 +15,7 @@ For each user prompt, the Coordinator owns the task and final response:
 4. **Classify task weight, then choose the route and model tier:** Assign a weight (Mechanical, Light, Medium, or Heavy) using the rubric below, then follow the weight routing table, the routing matrix, and `.ai/MODEL_ASSIGNMENTS.md`. The weight decides which agent starts the work. Use the smallest team that can satisfy the acceptance criteria. Keep low-risk work direct; do not invoke the whole role roster by default.
 5. **Set a token plan:** Estimate small/medium/high effort, decide which context each role needs, and set a runtime cap if available. Keep prompts bounded and avoid parallel agents on dependent work.
 6. **Delegate with a complete brief:** State outcome, acceptance criteria, scope, constraints, relevant paths/context, permitted actions, requested model tier, and concise output format. Do not delegate unresolved decisions as if they were settled. Create a recorded task brief (`.ai/tasks/`) only when the work will span more than one delegate handoff, more than one session, or multiple people — a single-session, single-delegate task does not need one.
-7. **Implement and verify:** For code changes with a suitable test suite, Coordinator delegates a baseline run to Verifier before edits; Verifier reports the baseline to Coordinator, and Coordinator then delegates implementation. After edits, Coordinator sends the final state to Verifier for the narrowest useful checks and baseline comparison. Verifier reports evidence to Coordinator and does not authorize or directly assign implementation. Implementers do not run commands where host permissions separate these roles. Use a single bounded fix-and-reverify pass by default.
+7. **Implement and verify:** For code changes with a suitable test suite, Coordinator delegates a baseline run to Verifier before edits when the host separates roles; Verifier reports the baseline to Coordinator, and Coordinator then delegates implementation. After edits, Coordinator sends the final state to Verifier for the narrowest useful checks and baseline comparison. Verifier reports evidence to Coordinator and does not authorize or directly assign implementation. Implementers do not run commands where host permissions separate these roles. In a single-agent host with edit and terminal capability, the current agent may implement and verify, but must keep the phases distinct and report only commands it actually ran. Use a single bounded fix-and-reverify pass by default.
 8. **Quality review:** Review the result against each acceptance criterion. Use an independent Reviewer for Heavy changes or when requested; routine changes do not need a redundant review agent. If the host cannot provide independent review, state that limitation in the report.
 9. **Report once:** Give changed areas, exact verification evidence, assumptions, unresolved issues, and remaining risks. Never claim a role or check ran without its result.
 
@@ -43,17 +43,19 @@ A Light or Medium task becomes Heavy when work reveals a high-impact trigger. A 
 
 The profile names and the concrete models behind each tier live in `.ai/MODEL_ASSIGNMENTS.md` (Copilot runtime mapping) and `.ai/adapters/copilot-models.json`.
 
+The table describes separated-role adapters. In the Copilot adapter, the read-only Coordinator sends Mechanical work to Utility. On a single-agent host where the current agent has edit capability and no adapter requires profile routing, the current agent may perform a one-line mechanical edit directly.
+
 
 ## Test completion gate
 
-Applies to every task that adds or changes a test. Decide this yourself; the user does not need to ask. The task is not complete, and Coordinator must not report it as done, until a Verifier has run the tests after the final edit and they pass.
+Applies to every task that adds or changes a test. Decide this yourself; the user does not need to ask. The task is not complete until the designated verification actor—Verifier in a separated-role host, or the current agent in a single-agent host—has run the tests after the final edit and they pass.
 
-1. Verifier captures a baseline of the affected test suite before edits.
-2. The implementer writes the tests. Implementers cannot run commands and must not claim they did.
-3. Verifier runs the new tests in isolation (the project's run-one-class or filter command). All expected tests must be discovered and pass; zero discovered, a compile error, or any failure means not done.
+1. The verification actor captures a baseline of the affected test suite before edits.
+2. The implementer writes the tests. In a separated-role adapter, implementers cannot run commands and must not claim they did; in a single-agent host, the current agent may continue to verification after editing.
+3. The verification actor runs the new tests in isolation (the project's run-one-class or filter command). All expected tests must be discovered and pass; zero discovered, a compile error, or any failure means not done.
 4. On failure, one repair pass goes to an implementer, then step 3 repeats. If it still fails, stop and report; never report success.
-5. Verifier runs the requested or project-level suite and compares it with the baseline. Failures already in the baseline are reported as pre-existing and never excuse a failure in the new tests. If the host aborts mid-suite, say the run is incomplete.
-6. The final report names the exact commands, exit codes, and pass/fail counts from the Verifier. If no Verifier or terminal is available, report the task as pending verification, not complete.
+5. The verification actor runs the requested or project-level suite and compares it with the baseline. Failures already in the baseline are reported as pre-existing and never excuse a failure in the new tests. If the host aborts mid-suite, say the run is incomplete.
+6. The final report names the exact commands, exit codes, and pass/fail counts from the verification actor. If no Verifier or terminal-capable current agent is available, report the task as pending verification, not complete.
 
 ## Routing matrix
 

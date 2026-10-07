@@ -10,7 +10,7 @@ The DiPro test suite is **red on a clean checkout**, so a failing test after you
 The recorded baseline is the "Recorded test baseline" table in `.ai/project/VERIFIED.md`, with its verification date and branch. Check that file's "Stale past" date before trusting it — re-run the commands below yourself once it's past that date, and do not trust the numbers on faith.
 
 ## Steps
-1. Identify the changed project and its closest test project by reading project references. Only five test projects exist; most of the 104 projects have none.
+1. Identify the changed project and its closest test project by reading project references. Only five test projects exist; most of the 87 C# projects have none.
 2. Build the project you changed first — a full `dotnet build DiPro.sln` takes about 7 minutes and emits ~1150 pre-existing warnings. Do not attribute those to your change.
 3. Run the narrowest check: `dotnet test <relevant-test-project.csproj> --no-build`.
 4. Compare against the baseline. Report new failures as yours; name pre-existing ones explicitly as not yours.
