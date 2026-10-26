@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "verifiedOn": "2026-10-21",
+  "staleAfterDays": 90,
+  "source": "IDs taken from the subagent model list the Cursor runtime exposed on 2026-10-21. Fast tier: cursor-grok-4.6-high-fast. Implementer: claude-sonnet-5-5-high. Architect: claude-opus-5-5-medium. Reviewer: gpt-5.6-sol-medium, a different family from the implementer. PO/BM inherits the parent. Task-card selection of these IDs has not been observed yet.",
+  "profiles": {
+    "architect": "claude-opus-5-5-medium",
+    "po-bm": "inherit",
+    "implementer-light": "cursor-grok-4.6-high-fast",
+    "implementer": "claude-sonnet-5-5-high",
+    "verifier": "cursor-grok-4.6-high-fast",
+    "reviewer": "gpt-5.6-sol-medium",
+    "utility": "cursor-grok-4.6-high-fast"
+  }
+}

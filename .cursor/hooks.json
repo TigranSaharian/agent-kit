@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "command": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/sync-agent-session-hook.ps1 -HookHost Cursor",
+        "timeout": 30
+      }
+    ]
+  }
+}

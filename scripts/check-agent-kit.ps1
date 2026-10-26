@@ -5,14 +5,14 @@
     instructions whose applyTo glob matches nothing in the repository.
 
 .DESCRIPTION
-    This does not check content quality — it checks that the kit's own
-    cross-references still resolve to real files, the same way a linter
-    checks that imports resolve. Run it after renaming, moving, or removing
-    any kit file (a role, a path-instruction file, an agent profile, an
-    entry point) to catch a dangling reference before an agent trips over it
-    mid-task.
+    This checks that the kit's own cross-references still resolve to real
+    files, the same way a linter checks that imports resolve, and that the
+    documented solution and test inventory still match DiPro.sln. Run it
+    after renaming, moving, or removing any kit file (a role, a
+    path-instruction file, an agent profile, an entry point) to catch a
+    dangling reference before an agent trips over it mid-task.
 
-    Twelve checks:
+    Fourteen checks:
     1. Markdown links ("[text](path)") inside .ai/, .github/, and the root
        entry-point files must resolve to an existing file (relative to the
        linking file's own directory). External (http/https/mailto) links
@@ -50,8 +50,18 @@
        cost cannot creep up unnoticed.
    11. Every scripts/*.ps1 named in .gitlab-ci.yml, the CI snippet, or the
        git hook must exist.
-   12. Every scripts/*.ps1 file must parse as valid PowerShell, so a syntax
+   12. The routing-evaluation catalog must retain the essential high-risk and
+       host-fallback scenarios, so a policy edit cannot silently remove them.
+   13. Every scripts/*.ps1 file must parse as valid PowerShell, so a syntax
        error cannot silently disable an enforcement check.
+   14. DiPro.sln must match the one
+       "DiPro.sln contains N solution entries: N C# projects and N solution
+       folders" statement in .ai/project/PROJECT_CONTEXT.md. Solution test
+       projects (a C# project whose file name ends in Tests.csproj) must
+       match the baseline rows under "Recorded test baseline" in
+       .ai/project/VERIFIED.md. Slash direction and case are normalized.
+       Non-test projects are excluded. The expected numbers are read from
+       the solution and the docs; they are not hard-coded in this script.
 
 .PARAMETER Quiet
     Suppress the per-check "OK" lines; still prints warnings/errors.
@@ -78,19 +88,37 @@ function Resolve-RepoPath {
     }
 }
 
+function ConvertTo-ComparableRepoPath {
+    param([string]$Path)
+    if ([string]::IsNullOrWhiteSpace($Path)) { return '' }
+    return ($Path.Trim() -replace '\\', '/').ToLowerInvariant()
+}
+
+function Get-RepoLeafName {
+    param([string]$Path)
+    if ([string]::IsNullOrWhiteSpace($Path)) { return '' }
+    $normalized = $Path.Trim() -replace '\\', '/'
+    $slash = $normalized.LastIndexOf('/')
+    if ($slash -ge 0 -and $slash -lt ($normalized.Length - 1)) {
+        return $normalized.Substring($slash + 1)
+    }
+    return $normalized
+}
+
 # --- Check 1: Markdown links resolve -----------------------------------
 $linkScanRoots = @(
     (Join-Path $repoRoot 'AGENTS.md'),
     (Join-Path $repoRoot 'CLAUDE.md'),
     (Join-Path $repoRoot '.ai'),
-    (Join-Path $repoRoot '.github')
+    (Join-Path $repoRoot '.github'),
+    (Join-Path $repoRoot '.cursor')
 )
 $linkPattern = '\[[^\]]*\]\(([^)]+)\)'
 $mdFiles = foreach ($root in $linkScanRoots) {
     if (Test-Path $root -PathType Leaf) {
         Get-Item $root
     } elseif (Test-Path $root -PathType Container) {
-        Get-ChildItem -Path $root -Filter '*.md' -Recurse -File
+        Get-ChildItem -Path $root -Recurse -File | Where-Object { $_.Extension -in @('.md', '.mdc') }
     }
 }
 
@@ -223,7 +251,9 @@ if (Test-Path $tokensFile -PathType Leaf) {
 
         foreach ($token in $tokens) {
             $tokenChecked++
-            $escaped = [regex]::Escape($token)
+            # Match a declared token, not an incidental substring such as
+            # a framework name appearing inside the generic word "libraries".
+            $escaped = '(?<![A-Za-z0-9_])' + [regex]::Escape($token) + '(?![A-Za-z0-9_])'
             for ($i = 0; $i -lt $scanUpTo; $i++) {
                 if ($lines[$i] -match $escaped) {
                     $rel = $file.FullName.Substring($repoRoot.Length + 1)
@@ -426,7 +456,24 @@ if (-not $Quiet) {
     Write-Host "Checked $scriptRefChecked script reference(s) in CI and hook files."
 }
 
-# --- Check 12: PowerShell scripts parse cleanly ----------------------------
+# --- Check 12: routing-evaluation coverage remains intact -------------------
+$evalCatalog = Join-Path $repoRoot '.ai/EVALS.md'
+$requiredEvals = @('E4', 'E8', 'E9', 'E10', 'E11', 'E16', 'E17')
+if (-not (Test-Path $evalCatalog -PathType Leaf)) {
+    $problems += '.ai/EVALS.md is missing; required routing-evaluation scenarios cannot be checked.'
+} else {
+    $evalText = Get-Content -Raw -Path $evalCatalog
+    foreach ($evalId in $requiredEvals) {
+        if ($evalText -notmatch "(?m)^\|\s*$evalId\s*\|") {
+            $problems += ".ai/EVALS.md is missing required routing-evaluation scenario $evalId."
+        }
+    }
+}
+if (-not $Quiet) {
+    Write-Host "Checked $($requiredEvals.Count) required routing-evaluation scenario(s)."
+}
+
+# --- Check 13: PowerShell scripts parse cleanly ----------------------------
 $scriptParseChecked = 0
 $scriptsRoot = Join-Path $repoRoot 'scripts'
 if (Test-Path $scriptsRoot -PathType Container) {
@@ -447,7 +494,148 @@ if (-not $Quiet) {
     Write-Host "Parsed $scriptParseChecked PowerShell script(s) for syntax errors."
 }
 
+# --- Check 14: solution inventory matches PROJECT_CONTEXT and VERIFIED -----
+# Read-only. Counts and test paths come from DiPro.sln and the docs.
+$entryCount = 0
+$csharpCount = 0
+$folderCount = 0
+$solutionTestPaths = New-Object System.Collections.Generic.List[string]
+$baselinePaths = New-Object System.Collections.Generic.List[string]
+$baselineSectionFound = $false
+$slnPath = Join-Path $repoRoot 'DiPro.sln'
+$contextPath = Join-Path $repoRoot '.ai/project/PROJECT_CONTEXT.md'
+$verifiedPath = Join-Path $repoRoot '.ai/project/VERIFIED.md'
+$slnExists = Test-Path -LiteralPath $slnPath -PathType Leaf
+$csharpProjectType = 'FAE04EC0-301F-11D3-BF4B-00C04F79EFBC'
+$solutionFolderType = '2150E333-8FDC-42A3-9474-1A3956D46DE8'
+
+if (-not $slnExists) {
+    $problems += 'DiPro.sln is missing, so the solution inventory cannot be checked.'
+} else {
+    $slnText = Get-Content -Raw -LiteralPath $slnPath
+    if ($null -eq $slnText) { $slnText = '' }
+    $projectPattern = '(?m)^Project\("\{(?<type>[0-9A-Fa-f-]+)\}"\)\s*=\s*"(?<name>[^"]*)"\s*,\s*"(?<path>[^"]*)"\s*,\s*"\{[0-9A-Fa-f-]+\}"'
+    foreach ($projectMatch in [regex]::Matches($slnText, $projectPattern)) {
+        $entryCount++
+        $typeId = $projectMatch.Groups['type'].Value
+        $relativePath = $projectMatch.Groups['path'].Value
+        if ($typeId.Equals($solutionFolderType, [System.StringComparison]::OrdinalIgnoreCase)) {
+            $folderCount++
+            continue
+        }
+        if (-not $typeId.Equals($csharpProjectType, [System.StringComparison]::OrdinalIgnoreCase)) {
+            continue
+        }
+        $csharpCount++
+        $leaf = Get-RepoLeafName $relativePath
+        if ($leaf.EndsWith('Tests.csproj', [System.StringComparison]::OrdinalIgnoreCase)) {
+            [void]$solutionTestPaths.Add($relativePath)
+        }
+    }
+}
+
+if (-not (Test-Path -LiteralPath $contextPath -PathType Leaf)) {
+    $problems += '.ai/project/PROJECT_CONTEXT.md is missing, so the declared solution counts cannot be checked.'
+} else {
+    $contextText = Get-Content -Raw -LiteralPath $contextPath
+    if ($null -eq $contextText) { $contextText = '' }
+    $statementPattern = 'DiPro\.sln`?\s+contains (\d+) solution entries: (\d+) C# projects and (\d+) solution folders'
+    $statementMatches = [regex]::Matches($contextText, $statementPattern)
+    if ($statementMatches.Count -ne 1) {
+        $problems += ".ai/project/PROJECT_CONTEXT.md must contain exactly one 'DiPro.sln contains N solution entries: N C# projects and N solution folders' statement (found $($statementMatches.Count))."
+    } elseif ($slnExists) {
+        $declaredEntries = [int]$statementMatches[0].Groups[1].Value
+        $declaredCsharp = [int]$statementMatches[0].Groups[2].Value
+        $declaredFolders = [int]$statementMatches[0].Groups[3].Value
+        if ($declaredEntries -ne $entryCount -or $declaredCsharp -ne $csharpCount -or $declaredFolders -ne $folderCount) {
+            $problems += ".ai/project/PROJECT_CONTEXT.md declares $declaredEntries solution entries, $declaredCsharp C# projects, and $declaredFolders solution folders, but DiPro.sln has $entryCount entries, $csharpCount C# projects, and $folderCount solution folders."
+        }
+    }
+}
+
+if (-not (Test-Path -LiteralPath $verifiedPath -PathType Leaf)) {
+    $problems += '.ai/project/VERIFIED.md is missing, so the test baseline cannot be checked.'
+} else {
+    $verifiedText = Get-Content -Raw -LiteralPath $verifiedPath
+    if ($null -eq $verifiedText) { $verifiedText = '' }
+    $sectionMatch = [regex]::Match($verifiedText, '(?s)## Recorded test baseline\b(.*?)(?:\r?\n## |\z)')
+    if (-not $sectionMatch.Success) {
+        $problems += ".ai/project/VERIFIED.md has no 'Recorded test baseline' section."
+    } else {
+        $baselineSectionFound = $true
+        $rowPattern = '(?m)^\|\s*`?([A-Za-z0-9_.\\/-]+\.csproj)`?\s*\|'
+        foreach ($rowMatch in [regex]::Matches($sectionMatch.Groups[1].Value, $rowPattern)) {
+            [void]$baselinePaths.Add($rowMatch.Groups[1].Value)
+        }
+    }
+}
+
+if ($slnExists) {
+    $solutionByKey = @{}
+    foreach ($solutionTestPath in $solutionTestPaths) {
+        $solutionKey = ConvertTo-ComparableRepoPath $solutionTestPath
+        if ($solutionByKey.ContainsKey($solutionKey)) {
+            $problems += "DiPro.sln repeats test project '$solutionTestPath'."
+        } else {
+            $solutionByKey[$solutionKey] = $solutionTestPath
+        }
+    }
+    if ($baselineSectionFound) {
+        $baselineByKey = @{}
+        foreach ($baselinePath in $baselinePaths) {
+            $baselineKey = ConvertTo-ComparableRepoPath $baselinePath
+            if ($baselineByKey.ContainsKey($baselineKey)) {
+                $problems += ".ai/project/VERIFIED.md repeats baseline row '$baselinePath'."
+            } else {
+                $baselineByKey[$baselineKey] = $baselinePath
+            }
+        }
+        foreach ($solutionKey in @($solutionByKey.Keys)) {
+            if (-not $baselineByKey.ContainsKey($solutionKey)) {
+                $problems += "Solution test project '$($solutionByKey[$solutionKey])' has no baseline row in .ai/project/VERIFIED.md."
+            }
+        }
+        foreach ($baselineKey in @($baselineByKey.Keys)) {
+            if (-not $solutionByKey.ContainsKey($baselineKey)) {
+                $problems += ".ai/project/VERIFIED.md baseline row '$($baselineByKey[$baselineKey])' is not a solution test project."
+            }
+        }
+    }
+}
+
+if (-not $Quiet) {
+    Write-Host "Checked solution inventory: $entryCount entries, $csharpCount C# project(s), $folderCount solution folder(s); $($solutionTestPaths.Count) solution test project(s) against $($baselinePaths.Count) baseline row(s)."
+}
+
 # --- Report ---------------------------------------------------------------
+if (Test-Path (Join-Path $repoRoot '.ai/agents.json') -PathType Leaf) {
+    foreach ($hookPath in @('.cursor/hooks.json', '.github/hooks/agent-kit-sync.json')) {
+        $hookFile = Join-Path $repoRoot $hookPath
+        if (-not (Test-Path -LiteralPath $hookFile -PathType Leaf)) {
+            $problems += "Missing session synchronization hook: $hookPath"
+            continue
+        }
+        try {
+            $hookConfig = Get-Content -Raw -LiteralPath $hookFile | ConvertFrom-Json
+            if ($hookConfig.version -ne 1 -or -not $hookConfig.hooks.sessionStart) {
+                $problems += "Invalid sessionStart configuration in $hookPath"
+            }
+            $hookCommands = @($hookConfig.hooks.sessionStart | ForEach-Object { $_.command; $_.powershell; $_.bash })
+            if (-not ($hookCommands | Where-Object { $_ -match 'scripts/sync-agent-session-hook\.ps1' })) {
+                $problems += "$hookPath does not invoke the shared synchronization wrapper."
+            }
+        } catch { $problems += "Invalid hook JSON in $hookPath" }
+    }
+    if (-not (Test-Path (Join-Path $PSScriptRoot 'sync-agent-session-hook.ps1') -PathType Leaf)) {
+        $problems += 'Shared session synchronization wrapper is missing.'
+    }
+}
+
+if (Test-Path (Join-Path $repoRoot '.ai/agents.json') -PathType Leaf) {
+    & (Join-Path $PSScriptRoot 'sync-agent-profiles.ps1') -CheckOnly
+    if ($LASTEXITCODE -ne 0) { $problems += 'Copilot/Cursor profiles or rules are out of sync with shared sources.' }
+}
+
 if ($problems.Count -gt 0) {
     foreach ($p in $problems) {
         Write-Warning $p
@@ -456,5 +644,5 @@ if ($problems.Count -gt 0) {
     exit 1
 }
 
-Write-Host 'Agent kit self-check passed: all links, role references, applyTo globs, genericity, subagent references, retired-family, section-reference, CI image, tool-boundary, size-budget, script-reference, and PowerShell-syntax checks are clean.'
+Write-Host 'Agent kit self-check passed: all links, role references, applyTo globs, genericity, subagent references, retired-family, section-reference, CI image, tool-boundary, size-budget, script-reference, routing-evaluation, PowerShell-syntax, and solution-inventory checks are clean.'
 exit 0

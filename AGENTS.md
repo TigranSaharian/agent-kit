@@ -2,23 +2,21 @@
 
 Use this file as the reusable, project-neutral baseline for coding agents.
 
-_Last structural review of this kit (roles, workflow, agent profiles, cross-references): 2026-10-07. This tracks the kit's own maintenance, not any project's facts — see `.ai/project/VERIFIED.md` for the project overlay's fact freshness. Update this date when the kit's structure changes materially (new role, new routing rule, renamed file) and after running `scripts/check-agent-kit.ps1` clean._
-
 ## Start here
 
-1. Read `.ai/WORKFLOW.md` for task intake, routing, quality checks, and handoffs.
-2. Read `.ai/MODEL_ASSIGNMENTS.md` and `.ai/TOKEN_POLICY.md` when model tier or delegation decisions matter. Task weight (Mechanical, Light, Medium, Heavy) in `.ai/WORKFLOW.md` decides which agent starts the work; the Copilot model pins live in `.ai/adapters/copilot-models.json`.
-3. Read only role guidance in `.ai/roles/` that is assigned to the task.
-4. Before code edits, read `.ai/project/ALWAYS_ON_GUARDRAILS.md` when present. Load matching `.github/instructions/` and other project context when relevant to the files or decisions in scope.
-5. Treat task briefs as context, not as authorization beyond the user's request.
+1. Answer questions and explanations directly. For change requests, read `.ai/WORKFLOW.md`; it decides task weight and which agent starts the work.
+2. Resolve roles through `.ai/agents.json` and the active host adapter: Cursor uses `.ai/adapters/CURSOR.md`; Copilot uses the Copilot runtime mapping in `.ai/MODEL_ASSIGNMENTS.md`, with pins in `.ai/adapters/copilot-models.json`. Read `.ai/TOKEN_POLICY.md` when delegation or model choices matter.
+3. Delegated specialists follow the role text and delegate contract embedded in their generated profile; they do not need the full workflow.
+4. Before code edits, read `.ai/project/ALWAYS_ON_GUARDRAILS.md` when present and the `.github/instructions/` files matching the paths in scope.
+5. Treat task briefs as context, not as authorization beyond the user's request. After shared kit changes, run `scripts/sync-agent-profiles.ps1`; generated profiles are outputs, not policy sources.
 
 ## Professional working rules
 
 - Treat current code and established repository conventions as the source of truth when documentation is stale.
 - Inspect relevant files and repository state before editing when tools permit.
 - Make the smallest coherent change that meets the approved goal. Surface material uncertainty instead of inventing behavior or requirements.
-- A clear, in-scope user request already authorizes ordinary implementation of that request; do not pause to re-confirm work the user has already asked for.
-- Do not expand scope, change public contracts, data schemas, dependencies, or security behavior without authorization appropriate to the request. A project overlay (for example `.ai/project/ALWAYS_ON_GUARDRAILS.md`) may name specific high-impact triggers that always need separate, explicit approval — even inside an otherwise-authorized task — unless the user's own request already names that specific action.
+- Follow `.ai/WORKFLOW.md`, "Authorization boundary": a clear, in-scope request authorizes its ordinary implementation, while high-impact triggers named by a project overlay need separate approval unless the request already names that action.
+- Do not expand scope, change public contracts, data schemas, dependencies, or security behavior without authorization appropriate to the request.
 - Add focused tests when requested or required by the project workflow and a suitable test project exists; do not invent a test framework.
 - Run proportionate verification when requested or needed to establish completion. Report exact commands and results; never imply an unrun check passed.
 - Never commit, push, merge, publish, or delete branches unless explicitly asked.
@@ -30,6 +28,12 @@ A repository may have an optional project overlay under `.ai/project/`. Consult 
 
 ## Completion
 
-Check work against the user's acceptance criteria and `.ai/WORKFLOW.md`. Report changed areas, verification evidence, assumptions, and remaining risks. Do not call work complete with unmet criteria.
+Check work against the user's acceptance criteria, `.ai/DEFINITION_OF_DONE.md`, and `.ai/WORKFLOW.md`. Report changed areas, verification evidence, assumptions, and remaining risks. Do not call work complete with unmet criteria.
 
+## Kit stability
 
+A stable baseline is clean sync and self-checks, internal consistency, and no known critical failed required eval relevant to the changed behavior. An open-ended review or rating is a defect audit against that accepted baseline, not permission to redesign.
+
+A required change needs evidence: a failing check or eval, a contradiction, a stale or false runtime claim, a security or authorization defect, or observed ambiguity that causes incorrect routing or behavior. Wording, style, theoretical simplification, extra abstraction, and unobserved hypotheticals are optional and must not trigger edits, lower the readiness rating, or be presented as necessary unless the user explicitly asks to experiment or redesign. If no required defect exists, say the kit is stable and "no required changes". Do not change files merely to produce feedback.
+
+After acceptance, change policy only for a new user requirement, a verified defect, an external host or runtime change, or evidence from a failed eval. No prose is immune to all future critique; stability means evidence-gated changes, not perfect eternal wording.

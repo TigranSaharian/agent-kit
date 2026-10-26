@@ -37,7 +37,7 @@ These are defaults only. Apply the task’s risk tier to every role involved. A 
 
 ## Copilot runtime mapping
 
-In Copilot, a custom agent's model is set in its own profile (`.github/agents/*.agent.md`, `model:` field), and Coordinator cannot switch its own model mid-session. Routing by task weight therefore means choosing **which profile** starts the work; each profile is pinned to one tier and family. `.ai/adapters/copilot-models.json` is the single source of truth for the pins; `scripts/sync-agent-models.ps1` writes them into the profiles and `-CheckOnly` detects drift.
+In Copilot, a custom agent's model is set in its own profile (`.github/agents/*.agent.md`, `model:` field), and Coordinator cannot switch its own model mid-session. Routing by task weight therefore means choosing **which profile** starts the work; each profile is pinned to one tier and family. `.ai/adapters/copilot-models.json` is the single source of truth for the pins. `scripts/sync-agent-profiles.ps1` generates both host profiles; the existing `scripts/sync-agent-models.ps1` remains the Copilot-only model validator and updater. Both provide `-CheckOnly` drift detection.
 
 | Profile | Role | Tier | Family |
 |---|---|---|---|
@@ -86,3 +86,7 @@ What works depends on the Copilot surface. Observations are dated and are not tr
 When delegation is unavailable the Coordinator must say so and must not claim any profile or model ran. `.github/copilot-instructions.md` still applies on surfaces that honor it, so the host's built-in agent mode can follow the same weight rubric by itself.
 
 A mapping is only as good as its last check. Verify available models in the exact surface being used and record the result in `.github/COPILOT_VALIDATION.md`. If per-agent model selection is unavailable on a surface, keep the task-weight guidance, report the limitation when it matters, and do not pretend the policy routed models automatically.
+
+## Cursor runtime mapping
+
+Read `.ai/adapters/CURSOR.md`. `.ai/adapters/cursor.json` maps shared logical agents to Cursor specialists; the main session acts as Coordinator. `.ai/adapters/cursor-models.json` pins Utility, Verifier, and Implementer-Light to a Fast model, Implementer to Claude Sonnet, Architect to Claude Opus, and Reviewer to GPT. PO/BM inherits the parent model. Inspect actual task-card models before claiming selection. Heavy work uses the GPT reviewer so the review is independent of the Claude implementer. Copilot's family-named profiles and tool allowlists apply only to Copilot.

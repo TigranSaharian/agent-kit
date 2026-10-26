@@ -9,13 +9,24 @@
 # What it does: runs the kit's own consistency checks (generated skill
 # mirrors, agent model pins, internal references) so drift is caught in CI
 # as well as locally via the optional .githooks/pre-commit hook.
+#
+# The job rules below also run it for merge requests. The pipeline workflow
+# must allow merge_request_event, and build, deploy, and audit jobs must
+# skip that source so a merge request does not publish an image.
 
 lint-agent-kit:
   stage: build
   tags:
     - docker
-  image: mcr.microsoft.com/powershell:7.5-ubuntu-22.04@sha256:45d59313a09af0748255ac47b71e411d6089b723b6fe99bc950286c03030a66a
+  image: mcr.microsoft.com/powershell:7.5-ubuntu-22.04@sha256:a3affe99603400235501b8da8be5f9e40152d4db6557f698a91da0280f9e1469
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "development"'
+    - if: '$CI_COMMIT_BRANCH =~ /^release\/release-.+$/'
+    - if: '$CI_COMMIT_BRANCH == "devops"'
   script:
     - pwsh -NoProfile -File scripts/sync-skills.ps1 -CheckOnly
     - pwsh -NoProfile -File scripts/sync-agent-models.ps1 -CheckOnly
+    - pwsh -NoProfile -File scripts/sync-agent-profiles.ps1 -CheckOnly
     - pwsh -NoProfile -File scripts/check-agent-kit.ps1
+    - pwsh -NoProfile -File scripts/test-agent-adapters.ps1

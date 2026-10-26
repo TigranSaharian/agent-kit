@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "entrySource": ".ai/adapters/cursor-entry.md",
+  "instructionDirectory": ".github/instructions",
+  "notes": "Main Cursor agent is Coordinator. Readonly is enforced for advisory roles; other role restrictions are behavioral instructions, not Copilot tool allowlists.",
+  "profiles": [
+    { "id": "architect", "agent": "architect", "readonly": true },
+    { "id": "po-bm", "agent": "po-bm", "readonly": true },
+    { "id": "implementer-light", "agent": "implementer-light", "readonly": false },
+    { "id": "implementer", "agent": "implementer", "readonly": false },
+    { "id": "verifier", "agent": "verifier", "readonly": false },
+    { "id": "reviewer", "agent": "reviewer", "readonly": true },
+    { "id": "utility", "agent": "utility", "readonly": false }
+  ]
+}
