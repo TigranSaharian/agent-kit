@@ -33,6 +33,11 @@ $canonicalRoot = Join-Path $repoRoot '.ai/project/skills'
 $targetDirs = @('.agents/skills', '.claude/skills')
 $banner = '<!-- generated: do not edit directly; edit .ai/project/skills/<name>/SKILL.md and run scripts/sync-skills.ps1 -->'
 
+function ConvertTo-NormalizedSkillText([string]$Text) {
+    if ($null -eq $Text) { return $null }
+    return (($Text -replace "`r`n", "`n" -replace "`r", "`n").TrimEnd("`n"))
+}
+
 if (-not (Test-Path $canonicalRoot -PathType Container)) {
     Write-Error "Canonical skills directory not found: $canonicalRoot"
     exit 1
@@ -63,7 +68,7 @@ foreach ($skillDir in $skillDirs) {
         $exists = Test-Path $targetFile -PathType Leaf
         $current = if ($exists) { Get-Content -Raw -Path $targetFile } else { $null }
 
-        if ($current -ceq $generatedContent) {
+        if ((ConvertTo-NormalizedSkillText $current) -ceq (ConvertTo-NormalizedSkillText $generatedContent)) {
             continue
         }
 

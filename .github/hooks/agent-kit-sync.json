@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "type": "command",
+        "powershell": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/sync-agent-session-hook.ps1 -HookHost Copilot",
+        "bash": "pwsh -NoProfile -File scripts/sync-agent-session-hook.ps1 -HookHost Copilot",
+        "cwd": ".",
+        "timeoutSec": 30
+      }
+    ]
+  }
+}

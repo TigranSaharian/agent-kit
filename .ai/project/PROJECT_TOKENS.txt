@@ -6,9 +6,10 @@
 # scripts/check-agent-kit.ps1 fails if any of these appear in the generic
 # layer, so a project fact cannot silently drift out of the overlay.
 #
-# Keep this list to project/codename-level identifiers, not common words —
+# Keep this list to project/codename-level identifiers, not common words:
 # specific enough that a legitimate match always means project-specific
 # content leaked into generic guidance.
-
-DiPro
-Libra
+#
+# Add your project and internal framework names below, for example:
+# MyProject
+# MyInternalFramework

@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "profiles": [
+    { "id": "coordinator", "agent": "coordinator", "name": "Coordinator", "tools": ["agent", "read", "search"] },
+    { "id": "architect", "agent": "architect", "name": "Architect", "tools": ["read", "search"] },
+    { "id": "po-bm", "agent": "po-bm", "name": "PO-BM", "tools": ["read", "search"] },
+    { "id": "implementer-light", "agent": "implementer-light", "name": "Implementer-Light", "tools": ["edit", "read", "search"] },
+    { "id": "implementer-claude", "agent": "implementer", "name": "Implementer-Claude", "tools": ["edit", "read", "search"] },
+    { "id": "implementer-gpt", "agent": "implementer", "name": "Implementer-GPT", "tools": ["edit", "read", "search"] },
+    { "id": "verifier", "agent": "verifier", "name": "Verifier", "tools": ["read", "search", "execute"] },
+    { "id": "reviewer-claude", "agent": "reviewer", "name": "Reviewer-Claude", "tools": ["read", "search"] },
+    { "id": "reviewer-gpt", "agent": "reviewer", "name": "Reviewer-GPT", "tools": ["read", "search"] },
+    { "id": "utility", "agent": "utility", "name": "Utility", "tools": ["edit", "read", "search"] }
+  ]
+}

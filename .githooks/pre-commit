@@ -42,6 +42,11 @@ if ! "$PWSH" -NoProfile -File scripts/sync-agent-models.ps1 -CheckOnly; then
 fi
 
 echo "pre-commit: checking agent kit internal references..."
+if ! "$PWSH" -NoProfile -File scripts/sync-agent-profiles.ps1 -CheckOnly; then
+    echo "pre-commit: host adapters drifted. Run scripts/sync-agent-profiles.ps1 and review obsolete outputs." >&2
+    exit 1
+fi
+
 if ! "$PWSH" -NoProfile -File scripts/check-agent-kit.ps1; then
     echo "pre-commit: agent kit has broken internal references. See warnings above." >&2
     exit 1

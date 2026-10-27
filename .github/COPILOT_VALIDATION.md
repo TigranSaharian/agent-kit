@@ -37,7 +37,7 @@ Run after changing `.ai/adapters/copilot-models.json`, after `scripts/sync-agent
 1. Run `scripts/sync-agent-models.ps1 -CheckOnly`; it must pass.
 2. Open the chat customization diagnostics and confirm every profile in `.github/agents/` loads without errors, including its `model:` value.
 3. For each profile in the table, confirm the model it is pinned to is listed in the model picker under that exact name and is enabled for your account or organization. Where the surface shows the model a profile or subagent actually used, record it; if it does not, record "not observable". Do not infer the model from the profile text.
-4. Run one small delegated task per family (a Light task and a Heavy-style review) and confirm the Coordinator started the intended profile and that the reviewer followed the opposite-family pairing in `.ai/MODEL_ASSIGNMENTS.md`. The scenarios in `.ai/EVALS.md` (E2, E4, E10) cover this; record those results there.
+4. Run one small delegated task per family (a Light task and a Heavy-style review) and confirm the Coordinator started the intended profile and that the reviewer followed the opposite-family pairing in `.ai/MODEL_ASSIGNMENTS.md`. The scenarios in `.ai/EVALS.md` (E2, E4, E10, E11) cover this; record those results there.
 5. Confirm terminal access matches `.ai/MODEL_ASSIGNMENTS.md`, "Tool boundaries": the Verifier can run a read-only test command, and no implementer, reviewer, or planner profile offers a terminal tool. Keep terminal-command approval prompts enabled for the Verifier.
 
 | Profile | Pinned tier | Listed in picker? | Model actually observed | Date and surface |
@@ -55,7 +55,13 @@ Run after changing `.ai/adapters/copilot-models.json`, after `scripts/sync-agent
 
 Until a row is filled for a surface, treat that profile's model pin as unverified there.
 
+## Minimum live-evidence campaign
+
+Before treating a Copilot surface as proven for consequential work, run and record E2 or E2a, E4, E8, E10, and E11 in `.ai/project/EVALS_LOG.md`. For each run record the surface and version, whether Coordinator was selected or automatic, the profiles and models visibly observed, approval behavior, terminal boundaries, exact verification result, and any host limitation. Do not convert a user report into a passing result unless the chat/tool activity was inspected.
+
 ## Validation log
+
+For session synchronization, verify `.github/hooks/agent-kit-sync.json` is discovered by the selected harness and inspect a real session-start invocation. See `.ai/adapters/SESSION_HOOKS.md` for Local versus CLI/Agent Host payloads and runtime requirements. Record event firing separately from simulated script tests; Visual Studio support remains unverified.
 
 Append a row only after performing the checks for that exact surface and version. Record observed behavior, not intended behavior. Keep separate rows for each surface.
 

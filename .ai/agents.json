@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "notes": "Shared logical agents. Edit behavior in the referenced role files; host discovery, models and permissions belong to adapters.",
+  "agents": [
+    { "id": "coordinator", "role": ".ai/roles/coordinator.md", "description": "Classifies tasks, sequences specialists, checks acceptance criteria and owns the user-facing result." },
+    { "id": "architect", "role": ".ai/roles/architect.md", "description": "Analyzes consequential design, module boundaries, contracts, persistence and operational impact before Heavy implementation." },
+    { "id": "po-bm", "role": ".ai/roles/po-bm.md", "description": "Clarifies product intent and testable acceptance criteria when requirements are materially uncertain." },
+    { "id": "implementer", "role": ".ai/roles/implementer.md", "description": "Implements authorized Medium or Heavy changes using established patterns and reports checks for Verifier." },
+    { "id": "implementer-light", "role": ".ai/roles/implementer-light.md", "description": "Implements small, fully specified Light changes; reports to Coordinator if scope or risk grows." },
+    { "id": "verifier", "role": ".ai/roles/verifier.md", "description": "Captures baseline and post-edit build/test evidence; reports exact commands, results and limitations without editing source." },
+    { "id": "reviewer", "role": ".ai/roles/reviewer.md", "description": "Independently reviews Heavy or explicitly requested changes for concrete defects, risks and verification gaps." },
+    { "id": "utility", "role": ".ai/roles/utility.md", "description": "Performs explicitly scoped Mechanical changes and reports when work stops being mechanical." }
+  ]
+}
